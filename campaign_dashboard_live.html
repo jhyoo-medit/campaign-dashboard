@@ -369,7 +369,7 @@ Object.keys(_owrCnt).forEach(o=>{
   OWNER_REGION[o]=Object.entries(_owrCnt[o]).sort((a,b)=>b[1]-a[1])[0][0];
 });
 
-let SRC='all',TAB='trend',FOWNER='all',FCOUNTRY='all',FREGION='all',CHARTS={};
+let SRC='all',TAB='owner',FOWNER='all',FCOUNTRY='all',FREGION='all',CHARTS={};
 function view(){let r=SRC==='all'?ALL:ALL.filter(d=>d.src===SRC);if(FOWNER!=='all')r=r.filter(d=>d.o===FOWNER);if(FCOUNTRY!=='all')r=r.filter(d=>d.c===FCOUNTRY);if(FREGION!=='all')r=r.filter(d=>d.r===FREGION);return r;}
 function cnt(arr,k){return arr.reduce((m,d)=>{m[d[k]]=(m[d[k]]||0)+1;return m;},{});}
 function pct(a,b){if(b===0)return a>0?'+100%':'—';const v=Math.round((a-b)/b*100);return(v>=0?'+':'')+v+'%';}
@@ -417,14 +417,14 @@ function render(){
 </div>
 <div class="krow">
   <div class="kc"><div class="kl">Total Campaign Deals</div><div class="kv">${srcTotal}</div><div class="km"><span class="ks">With filter: ${total} deals</span></div></div>
-  <div class="kc"><div class="kl">Today's New Deals (${today})</div><div class="kv">${todayN}</div><div class="km"><span class="ks">Yesterday: ${yesterN}</span><span class="bd ${todayN>=yesterN?'up':'dn'}">${pct(todayN,yesterN)}</span></div></div>
+  <div class="kc"><div class="kl">Today's New Deals (${today})</div><div class="kv">${todayN}</div><div class="km"><span class="ks">Yesterday: ${yesterN}</span><span class="bd ${todayN>=yesterN?'up':'dn'}">${pct(todayN,yesterN)}</span></div><div style="font-size:10px;color:#aaa;margin-top:4px;">* Today's New may differ from the daily email report due to timezone differences.</div></div>
   <div class="kc"><div class="kl">Closed Won</div><div class="kv">${wonN}</div></div>
   <div class="kc"><div class="kl">Pipeline Progress Rate</div><div class="kv">${advPct}%</div><div class="km"><span class="ks">${advN} progressed</span></div></div>
 </div></div>
 <div class="tabs">
+  <button class="tb ${TAB==='owner'?'on':''}" onclick="setTab('owner')">Deal Owner Performance</button>
   <button class="tb ${TAB==='trend'?'on':''}" onclick="setTab('trend')">Daily Trend</button>
   <button class="tb ${TAB==='region'?'on':''}" onclick="setTab('region')">Region & Country</button>
-  <button class="tb ${TAB==='owner'?'on':''}" onclick="setTab('owner')">Deal Owner Performance</button>
 </div>
 <div id="p-trend" class="pane ${TAB==='trend'?'on':''}">
   <div class="r2">
