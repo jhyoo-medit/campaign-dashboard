@@ -679,39 +679,47 @@ function _startAuto(){
 }
 function _manualRefresh(){_fetchAndMerge();if(_interval)_startCd();}
 
+async function _searchDeals(formValue,src){
+  let after=null,results=[],page=0;
+  while(page<20){
+    const body={
+      filterGroups:[{filters:[{propertyName:'deal_form_submission',operator:'EQ',value:formValue}]}],
+      properties:['dealstage','createdate','hubspot_owner_id','hs_analytics_source_data_2'],
+      limit:100
+    };
+    if(after)body.after=after;
+    const res=await fetch(PROXY+'?url='+encodeURIComponent('https://api.hubapi.com/crm/v3/objects/deals/search'),{
+      method:'POST',
+      headers:{Authorization:'Bearer '+_token,'Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    });
+    if(!res.ok)throw new Error('API '+res.status);
+    const j=await res.json();
+    (j.results||[]).forEach(d=>{
+      const created=(d.properties?.createdate||'').slice(0,10);
+      const owner=d.properties?.hubspot_owner_id||'';
+      const stage=d.properties?.dealstage||'';
+      if(created)results.push([created,null,'—',owner,stage,src]);
+    });
+    if(j.paging?.next?.after){after=j.paging.next.after;page++;}else break;
+  }
+  return results;
+}
+
 async function _fetchAndMerge(){
   if(!_token){_setStatus('static','Static data (API 토큰 없음)');return;}
   try{
     _setStatus('static','HubSpot에서 데이터 불러오는 중...');
-    const GLOW_PIPES=new Set(['1288965551','90694962','126708664','171481607','1162868664']);
-    const TRADE_PIPES=new Set(['1285594678','1285594679','1287126535','1287126536','1287972528','1287972529','1285594680','1287972530','1287972531','1285594683','1285594684','1287126542','151814710','151814711','151814713']);
-    let after=undefined,newDeals=[],page=0;
-    while(page<15){
-      const url='https://api.hubapi.com/crm/v3/objects/deals?limit=100&properties=dealname,dealstage,pipeline,hubspot_owner_id,createdate,country'
-        +(after?'&after='+after:'');
-      const res=await fetch(PROXY+'?url='+encodeURIComponent(url),{headers:{Authorization:'Bearer '+_token}});
-      if(!res.ok)throw new Error('API '+res.status);
-      const j=await res.json();
-      (j.results||[]).forEach(d=>{
-        const pipe=d.properties?.pipeline||'';
-        if(!GLOW_PIPES.has(pipe)&&!TRADE_PIPES.has(pipe))return;
-        const src=GLOW_PIPES.has(pipe)?'glow':'trade';
-        const created=(d.properties?.createdate||'').slice(0,10);
-        const owner=d.properties?.hubspot_owner_id||'';
-        const stage=d.properties?.dealstage||'';
-        const country=d.properties?.country||'—';
-        if(created)newDeals.push([created,null,country,owner,stage,src]);
-      });
-      if(j.paging?.next?.after){after=j.paging.next.after;page++;}else break;
-    }
-    if(!newDeals.length){_setStatus('err','딜 없음 — 파이프라인 확인 필요');return;}
-    // 오늘 날짜 딜만 실시간으로 갱신 (기존 과거 데이터 유지)
-    const today2=new Date(Date.now()+9*60*60*1000).toISOString().slice(0,10);
-    const todayLive=newDeals.filter(r=>r[0]===today2);
-    const merged=[...RAW.filter(r=>r[0]!==today2),...todayLive];
+    const [glowDeals,tradeDeals]=await Promise.all([
+      _searchDeals('2026 glow campaign','glow'),
+      _searchDeals('medit trade-in 2026 quickstart promotion','trade')
+    ]);
+    const allApiDeals=[...glowDeals,...tradeDeals];
+    if(!allApiDeals.length){_setStatus('err','딜 없음 — API 확인 필요');return;}
+    // ALL 완전 교체
     ALL.length=0;
     const _owrCnt2={};
-    merged.forEach(r=>{
+    allApiDeals.forEach(r=>{
       const region=r[1]||'(Unassigned)';
       ALL.push({d:r[0],r:region,c:r[2]||'—',o:r[3],sid:r[4],src:r[5]});
       if(region!=='(Unassigned)'&&r[3]){
@@ -724,12 +732,13 @@ async function _fetchAndMerge(){
       if(best)OWNER_REGION[o]=best[0];
     });
     _liveMode=true;
-    const gLive=newDeals.filter(r=>r[5]==='glow').length;
-    const tLive=newDeals.filter(r=>r[5]==='trade').length;
-    _setStatus('live',`Live — API 딜 ${newDeals.length}건 (Glow ${gLive} · Trade-in ${tLive}) · ${new Date().toLocaleTimeString('ko-KR')}`);
-    document.querySelector('.sub').textContent=`Based on deal_form_submission · Total ${newDeals.length} deals (API) · As of ${today2}`;
+    const gLive=glowDeals.length;
+    const tLive=tradeDeals.length;
+    const now2=new Date(Date.now()+9*60*60*1000).toISOString().slice(0,10);
+    _setStatus('live',`Live — Glow ${gLive} · Trade-in ${tLive} · Total ${allApiDeals.length}건 · ${new Date().toLocaleTimeString('ko-KR')}`);
+    document.querySelector('.sub').textContent=`Based on deal_form_submission · Total ${allApiDeals.length} deals (API) · As of ${now2}`;
     if(document.getElementById('_connMsg'))
-      document.getElementById('_connMsg').innerHTML=`<span style="color:#1D9E75">✓ ${new Date().toLocaleTimeString('ko-KR')} 업데이트 완료 — ${newDeals.length}건</span>`;
+      document.getElementById('_connMsg').innerHTML=`<span style="color:#1D9E75">✓ ${new Date().toLocaleTimeString('ko-KR')} 업데이트 완료 — ${allApiDeals.length}건</span>`;
     render();
   }catch(err){
     _liveMode=false;
