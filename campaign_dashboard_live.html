@@ -374,8 +374,9 @@ function view(){let r=SRC==='all'?ALL:ALL.filter(d=>d.src===SRC);if(FOWNER!=='al
 function cnt(arr,k){return arr.reduce((m,d)=>{m[d[k]]=(m[d[k]]||0)+1;return m;},{});}
 function pct(a,b){if(b===0)return a>0?'+100%':'—';const v=Math.round((a-b)/b*100);return(v>=0?'+':'')+v+'%';}
 function fillDates(s,e){const d=[],c=new Date(s),en=new Date(e);while(c<=en){d.push(c.toISOString().slice(0,10));c.setDate(c.getDate()+1);}return d;}
-const today=new Date().toISOString().slice(0,10);
-const yest=new Date(Date.now()-86400000).toISOString().slice(0,10);
+const _kst=9*60*60*1000;
+const today=new Date(Date.now()+_kst).toISOString().slice(0,10);
+const yest=new Date(Date.now()+_kst-86400000).toISOString().slice(0,10);
 const ALL_CTR=[...new Set(ALL.map(d=>d.c))].sort();
 const ALL_REG=[...new Set(ALL.map(d=>d.r))].sort();
 
@@ -705,7 +706,7 @@ async function _fetchAndMerge(){
     }
     if(!newDeals.length){_setStatus('err','딜 없음 — 파이프라인 확인 필요');return;}
     // 오늘 날짜 딜만 실시간으로 갱신 (기존 과거 데이터 유지)
-    const today2=new Date().toISOString().slice(0,10);
+    const today2=new Date(Date.now()+9*60*60*1000).toISOString().slice(0,10);
     const todayLive=newDeals.filter(r=>r[0]===today2);
     const merged=[...RAW.filter(r=>r[0]!==today2),...todayLive];
     ALL.length=0;
