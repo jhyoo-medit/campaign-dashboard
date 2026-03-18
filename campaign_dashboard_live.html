@@ -462,7 +462,7 @@ function render(){
     <div class="card"><div class="ct">Deal Count by Owner</div>
       <div style="height:300px;position:relative"><canvas id="cOB"></canvas></div></div>
     <div class="card"><div class="ct">Owner Progress Summary</div>
-      <table class="tbl"><thead><tr><th>Owner</th><th>Region</th><th class="num" style="color:#534AB7">Glow</th><th class="num" style="color:#0F6E56">T.I.</th><th class="num bold">Total</th><th class="num">Advanced</th><th class="num">Adv. Rate</th></tr></thead><tbody id="otb"></tbody></table>
+      <table class="tbl"><thead><tr><th>Owner</th><th>Region</th><th class="num" style="color:#534AB7">Glow</th><th class="num" style="color:#0F6E56">Trade-In</th><th class="num bold">Total</th><th class="num">Advanced</th><th class="num">Closed Won</th><th class="num">Adv. Rate</th><th class="num">Won Rate</th></tr></thead><tbody id="otb"></tbody></table>
     </div>
   </div>
 </div>
@@ -583,12 +583,16 @@ function buildOwnerStage(D){
 function buildOwnerTable(D){
   const fG=D.filter(d=>d.src==='glow'),fT=D.filter(d=>d.src==='trade');
   const owG=cnt(fG,'o'),owT=cnt(fT,'o'),owA=cnt(D,'o');
-  // Region from OWNER_REGION constant (most-frequent region per owner)
   const b=document.getElementById('otb');if(!b)return;b.innerHTML='';
   Object.keys(owA).filter(o=>!SKIP.has(o)).sort((a,b)=>owA[b]-owA[a]).forEach(o=>{
-    const total=owA[o]||0,adv=D.filter(d=>d.o===o&&!NL.has(d.sid)&&!CL.has(d.sid)).length;
-    const pv=Math.round(adv/Math.max(total,1)*100),col=pv>=50?'#065F46':pv>=20?'#1D4ED8':'#888';
-    b.innerHTML+=`<tr><td class="bold" style="font-size:12px">${OW[o]||o}</td><td style="font-size:11px;color:var(--color-text-secondary,#666)">${OWNER_REGION[o]||'—'}</td><td class="num" style="color:#534AB7">${owG[o]||0}</td><td class="num" style="color:#0F6E56">${owT[o]||0}</td><td class="num bold">${total}</td><td class="num">${adv}</td><td class="num"><span style="font-weight:500;color:${col}">${pv}%</span></td></tr>`;
+    const total=owA[o]||0;
+    const adv=D.filter(d=>d.o===o&&!NL.has(d.sid)&&!CL.has(d.sid)).length;
+    const won=D.filter(d=>d.o===o&&WN.has(d.sid)).length;
+    const advPct=Math.round(adv/Math.max(total,1)*100);
+    const wonPct=Math.round(won/Math.max(total,1)*100);
+    const advCol=advPct>=50?'#065F46':advPct>=20?'#1D4ED8':'#888';
+    const wonCol=wonPct>=10?'#065F46':wonPct>=5?'#1D4ED8':'#888';
+    b.innerHTML+=`<tr><td class="bold" style="font-size:12px">${OW[o]||o}</td><td style="font-size:11px;color:var(--color-text-secondary,#666)">${OWNER_REGION[o]||'—'}</td><td class="num" style="color:#534AB7">${owG[o]||0}</td><td class="num" style="color:#0F6E56">${owT[o]||0}</td><td class="num bold">${total}</td><td class="num">${adv}</td><td class="num">${won}</td><td class="num"><span style="font-weight:500;color:${advCol}">${advPct}%</span></td><td class="num"><span style="font-weight:500;color:${wonCol}">${wonPct}%</span></td></tr>`;
   });
 }
 
