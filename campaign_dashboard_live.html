@@ -352,9 +352,9 @@ const OW={'87383427':'Khulief Bassel','87383418':'Ludwig Schultheiss','87383431'
 const SKIP=new Set(['304544318','17459943','83583738','698771778','88097478','80932512','33535508','88767179']);
 const CORE_OW=['87383427','87383418','87383431','65907811','75624653','719906327','719927206','719927207','719927205','87231176','87865464','1416440229'];
 
-const gC=RAW.filter(r=>r[5]==='glow').length;
-const tC=RAW.filter(r=>r[5]==='trade').length;
-console.log('✅ Glow:'+gC+', Trade-in:'+tC+', Total:'+(gC+tC));
+let gC=RAW.filter(r=>r[5]==='glow').length;
+let tC=RAW.filter(r=>r[5]==='trade').length;
+console.log('✅ RAW Glow:'+gC+', Trade-in:'+tC+', Total:'+(gC+tC)+' (API 연결 시 자동 업데이트)');
 
 const ALL=RAW.map(r=>({d:r[0],r:r[1]||'(Unassigned)',c:r[2],o:r[3],sid:r[4],src:r[5]}));
 // Owner별 region 최빈값 동적 계산 (null/Unassigned 제외)
@@ -738,6 +738,10 @@ async function _fetchAndMerge(){
     _liveMode=true;
     const gLive=glowDeals.length;
     const tLive=tradeDeals.length;
+    // gC, tC를 API 데이터 기준으로 업데이트 (카드/차트에 반영)
+    gC = gLive;
+    tC = tLive;
+    console.log('✅ API Glow:'+gC+', Trade-in:'+tC+', Total:'+(gC+tC));
     const now2=new Date(Date.now()+9*60*60*1000).toISOString().slice(0,10);
     _setStatus('live',`Live — Glow ${gLive} · Trade-in ${tLive} · Total ${allApiDeals.length}건 · ${new Date().toLocaleTimeString('ko-KR')}`);
     document.querySelector('.sub').textContent=`Based on deal_form_submission · Total ${allApiDeals.length} deals (API) · As of ${now2}`;
