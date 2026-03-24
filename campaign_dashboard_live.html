@@ -1,4 +1,7 @@
 <!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
@@ -604,10 +607,9 @@ render();
 
 // ── LIVE UPDATE LAYER ──────────────────────────────────────────────
 const PROXY='https://black-pine-7262.jinhyuk-medit.workers.dev';
-let _token='',_interval=300,_autoTimer=null,_cdTimer=null,_cdVal=0,_liveMode=false;
+let _interval=300,_autoTimer=null,_cdTimer=null,_cdVal=0,_liveMode=false;
 
-try{const t=localStorage.getItem('hs_live_token');if(t)_token=t;
-    const iv=localStorage.getItem('hs_live_interval');if(iv)_interval=parseInt(iv);}catch(e){}
+try{const iv=localStorage.getItem('hs_live_interval');if(iv)_interval=parseInt(iv);}catch(e){}
 
 // 상단 라이브 바 삽입
 const _bar=document.createElement('div');
@@ -615,46 +617,16 @@ _bar.id='liveBar';
 _bar.style.cssText='display:flex;align-items:center;gap:8px;padding:7px 20px;background:#f8f8fc;border-bottom:.5px solid #e5e5e5;font-size:11px;flex-wrap:wrap;position:sticky;top:0;z-index:99;';
 _bar.innerHTML=`
   <span id="liveDot" style="width:7px;height:7px;border-radius:50%;background:#aaa;flex-shrink:0"></span>
-  <span id="liveStatus" style="color:#666">Static data — HubSpot 미연결</span>
+  <span id="liveStatus" style="color:#666">데이터 불러오는 중...</span>
   <span id="liveCd" style="color:#aaa"></span>
   <span style="margin-left:auto;display:flex;gap:6px;">
     <button onclick="_manualRefresh()" style="font-size:11px;padding:3px 10px;border:.5px solid #ccc;border-radius:6px;background:#fff;cursor:pointer">새로고침</button>
-    <button onclick="_togglePanel()" style="font-size:11px;padding:3px 10px;border:.5px solid #534AB7;border-radius:6px;background:#fff;color:#534AB7;cursor:pointer">⚙ API 설정</button>
   </span>`;
 document.body.insertBefore(_bar,document.body.firstChild);
 
-// 설정 패널
-const _panel=document.createElement('div');
-_panel.id='livePanel';
-_panel.style.cssText='display:none;padding:14px 20px;background:#fff;border-bottom:.5px solid #e5e5e5;';
-_panel.innerHTML=`
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;max-width:800px">
-    <div>
-      <div style="font-size:11px;color:#666;margin-bottom:4px">HubSpot API 토큰</div>
-      <input id="_tk" type="password" placeholder="pat-na1-xxxx 또는 Legacy key" style="width:100%;font-size:12px;padding:6px 8px;border:.5px solid #ccc;border-radius:6px;">
-    </div>
-    <div>
-      <div style="font-size:11px;color:#666;margin-bottom:4px">자동 갱신 주기</div>
-      <select id="_iv" style="width:100%;font-size:12px;padding:6px 8px;border:.5px solid #ccc;border-radius:6px;">
-        <option value="60">1분</option>
-        <option value="300" selected>5분</option>
-        <option value="600">10분</option>
-        <option value="0">수동만</option>
-      </select>
-    </div>
-    <div style="display:flex;align-items:flex-end;gap:6px">
-      <button onclick="_saveAndFetch()" style="font-size:12px;padding:6px 16px;background:#534AB7;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:500">저장 및 연결</button>
-      <button onclick="_testConn()" style="font-size:12px;padding:6px 12px;border:.5px solid #534AB7;color:#534AB7;background:#fff;border-radius:6px;cursor:pointer">테스트</button>
-    </div>
-  </div>
-  <div id="_connMsg" style="font-size:11px;margin-top:8px;"></div>`;
-document.body.insertBefore(_panel,document.body.children[1]);
+// 설정 패널 제거 - 토큰은 Cloudflare Worker 환경변수로 관리
 
-function _togglePanel(){
-  _panel.style.display=_panel.style.display==='none'?'block':'none';
-  if(_token)document.getElementById('_tk').value=_token;
-  document.getElementById('_iv').value=String(_interval);
-}
+function _togglePanel(){ }
 function _setStatus(dot,msg,cd){
   const d=document.getElementById('liveDot');
   const s=document.getElementById('liveStatus');
@@ -694,7 +666,7 @@ async function _searchDeals(formValue,src){
     if(after)body.after=after;
     const res=await fetch(PROXY+'?url='+encodeURIComponent('https://api.hubapi.com/crm/v3/objects/deals/search'),{
       method:'POST',
-      headers:{Authorization:'Bearer '+_token,'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify(body)
     });
     if(!res.ok)throw new Error('API '+res.status);
@@ -711,7 +683,6 @@ async function _searchDeals(formValue,src){
 }
 
 async function _fetchAndMerge(){
-  if(!_token){_setStatus('static','Static data (API 토큰 없음)');return;}
   try{
     _setStatus('static','HubSpot에서 데이터 불러오는 중...');
     const [glowDeals,tradeDeals]=await Promise.all([
@@ -756,26 +727,9 @@ async function _fetchAndMerge(){
   }
 }
 
-async function _testConn(){
-  const tok=document.getElementById('_tk').value.trim();
-  if(!tok){document.getElementById('_connMsg').textContent='토큰을 입력해주세요';return;}
-  document.getElementById('_connMsg').innerHTML='<span style="color:#888">테스트 중...</span>';
-  try{
-    const res=await fetch(PROXY+'?url='+encodeURIComponent('https://api.hubapi.com/crm/v3/objects/deals?limit=1'),
-      {headers:{Authorization:'Bearer '+tok}});
-    if(res.ok)document.getElementById('_connMsg').innerHTML='<span style="color:#1D9E75">✓ 연결 성공! 저장 버튼을 눌러 적용하세요</span>';
-    else document.getElementById('_connMsg').innerHTML=`<span style="color:#E24B4A">✗ 인증 실패 (${res.status})</span>`;
-  }catch(e){document.getElementById('_connMsg').innerHTML=`<span style="color:#E24B4A">✗ ${e.message}</span>`;}
-}
+async function _testConn(){ }
 
-function _saveAndFetch(){
-  _token=document.getElementById('_tk').value.trim();
-  _interval=parseInt(document.getElementById('_iv').value);
-  try{localStorage.setItem('hs_live_token',_token);localStorage.setItem('hs_live_interval',String(_interval));}catch(e){}
-  _panel.style.display='none';
-  _fetchAndMerge();
-  _startAuto();
-}
+function _saveAndFetch(){ }
 
 const _st=document.createElement('style');
 _st.textContent='@keyframes livepulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}';
@@ -786,6 +740,6 @@ window._togglePanel=_togglePanel;
 window._saveAndFetch=_saveAndFetch;
 window._testConn=_testConn;
 
-if(_token){_fetchAndMerge();_startAuto();}
-else _setStatus('static','Static data — ⚙ API 설정에서 토큰 입력 시 실시간 연동');
+_fetchAndMerge();
+_startAuto();
 </script></body></html>
