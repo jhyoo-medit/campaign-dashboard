@@ -503,7 +503,7 @@ function buildCharts(D){
   const allDates=fillDates(minD,maxD);
   let cg=0,ct2=0;const cumG=[],cumT=[],cumL=[];
   allDates.forEach((date,i)=>{
-    cg+=(gM[date]||0);ct2+=(tM[date]||0);cumG.push(cg);cumT.push(ct2);
+    cg+=(gM[date]||0);ct2+=((t1M[date]||0)+(t2M[date]||0));cumG.push(cg);cumT.push(ct2);
     const prev=allDates[i-1];
     cumL.push(!prev||date.slice(0,7)!==prev.slice(0,7)||i===0||i===allDates.length-1?date.slice(5):'');
   });
