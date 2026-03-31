@@ -454,7 +454,7 @@ function render(){
   <div class="chips" id="rchips"></div>
   <div class="r2">
     <div class="card"><div class="ct">Region Share by Campaign (%)</div><div class="cs">Glow ${gC} / Q1 ${t1C} / Q2 ${t2C}</div>
-      <div class="leg"><span class="li"><span class="ld" style="background:#534AB7"></span>Glow share</span><span class="li"><span class="ld" style="background:#0F6E56"></span>Trade-in share</span></div>
+      <div class="leg"><span class="li"><span class="ld" style="background:#534AB7"></span>Glow</span><span class="li"><span class="ld" style="background:#0F6E56"></span>Q1 Trade-in</span><span class="li"><span class="ld" style="background:#185FA5"></span>Q2 Trade-in</span></div>
       <div style="height:280px;position:relative"><canvas id="cRG"></canvas></div></div>
     <div class="card"><div class="ct">Top 12 Countries</div>
       <div class="leg"><span class="li"><span class="ld" style="background:#534AB7"></span>Glow</span><span class="li"><span class="ld" style="background:#0F6E56"></span>Q1 Trade-in</span><span class="li"><span class="ld" style="background:#185FA5"></span>Q2 Trade-in</span></div>
@@ -469,6 +469,7 @@ function render(){
     <div class="card"><div class="ct">Deal Count by Owner</div>
       <div style="height:300px;position:relative"><canvas id="cOB"></canvas></div></div>
     <div class="card"><div class="ct">Owner Progress Summary</div>
+      <div style="font-size:10px;color:var(--color-text-secondary,#888);margin-bottom:6px;">* Advanced: Deals that have progressed beyond the New Leads stage</div>
       <table class="tbl"><thead><tr><th>Owner</th><th>Region</th><th class="num" style="color:#534AB7">Glow</th><th class="num" style="color:#0F6E56">Q1 T.I.</th><th class="num" style="color:#185FA5">Q2 T.I.</th><th class="num bold">Total</th><th class="num">Advanced</th><th class="num">Closed Won</th><th class="num">Adv. Rate</th><th class="num">Won Rate</th></tr></thead><tbody id="otb"></tbody></table>
     </div>
   </div>
@@ -670,7 +671,7 @@ async function _searchDeals(formValue,src){
   while(page<20){
     const body={
       filterGroups:[{filters:[{propertyName:'deal_form_submission',operator:'EQ',value:formValue}]}],
-      properties:['dealstage','createdate','hubspot_owner_id','hs_analytics_source_data_2'],
+      properties:['dealstage','createdate','hubspot_owner_id','hs_analytics_source_data_2','deal_country','sales_region'],
       limit:100
     };
     if(after)body.after=after;
@@ -685,7 +686,9 @@ async function _searchDeals(formValue,src){
       const created=(d.properties?.createdate||'').slice(0,10);
       const owner=d.properties?.hubspot_owner_id||'';
       const stage=d.properties?.dealstage||'';
-      if(created)results.push([created,null,'—',owner,stage,src]);
+      const region=d.properties?.sales_region||null;
+      const country=d.properties?.deal_country||'—';
+      if(created)results.push([created,region,country,owner,stage,src]);
     });
     if(j.paging?.next?.after){after=j.paging.next.after;page++;}else break;
   }
