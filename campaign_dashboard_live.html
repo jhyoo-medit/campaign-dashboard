@@ -614,7 +614,7 @@ window.setSrc=s=>{SRC=s;render();};window.setTab=t=>{TAB=t;render();};
 window.setOwner=v=>{FOWNER=v;render();};window.setCountry=v=>{FCOUNTRY=v;render();};
 window.clearF=()=>{FOWNER='all';FCOUNTRY='all';FREGION='all';render();};
 window.setRegion=v=>{FREGION=v;render();};
-render();
+// render()는 _fetchAndMerge 완료 후 실행됨 (Owner 이름 로드 후 렌더링)
 
 // ── LIVE UPDATE LAYER ──────────────────────────────────────────────
 const PROXY='https://black-pine-7262.jinhyuk-medit.workers.dev';
@@ -710,7 +710,7 @@ async function _fetchAndMerge(){
       const ownersData=await ownersRes.json();
       (ownersData.results||[]).forEach(o=>{
         const name=[o.firstName,o.lastName].filter(Boolean).join(' ');
-        if(name)OW[o.id]=name;
+        if(name)OW[String(o.id)]=name; // 문자열로 통일 (딜의 hubspot_owner_id가 문자열)
       });
     }
     const allApiDeals=[...glowDeals,...trade1Deals,...trade2Deals];
@@ -747,6 +747,7 @@ async function _fetchAndMerge(){
     _setStatus('err','연결 실패: '+err.message);
     if(document.getElementById('_connMsg'))
       document.getElementById('_connMsg').innerHTML=`<span style="color:#E24B4A">✗ ${err.message}</span>`;
+    render(); // 실패 시에도 RAW 데이터로 렌더링
   }
 }
 
