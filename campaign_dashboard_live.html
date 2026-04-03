@@ -706,7 +706,7 @@ async function _fetchAndMerge(){
     ]);
     // Owner 목록 별도 조회 (GET 요청)
     try{
-      const ownersRes=await fetch(PROXY+'?url='+encodeURIComponent('https://api.hubapi.com/crm/v3/owners'),{
+      const ownersRes=await fetch(PROXY+'?url='+encodeURIComponent('https://api.hubapi.com/crm/v3/owners?limit=500&includeInactive=true'),{
         method:'GET',
         headers:{'Content-Type':'application/json'}
       });
