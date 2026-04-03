@@ -701,7 +701,7 @@ async function _fetchAndMerge(){
     const [glowDeals,trade1Deals,trade2Deals]=await Promise.all([
       _searchDeals('2026 glow campaign','glow'),
       _searchDeals('medit trade-in 2026 quickstart promotion','trade1'),
-      _searchDeals('Medit 2026 Q2 trade-in','trade2')
+      _searchDeals('Medit 2026 Q2 Trade-in','trade2')
     ]);
     const allApiDeals=[...glowDeals,...trade1Deals,...trade2Deals];
     if(!allApiDeals.length){_setStatus('err','딜 없음 — API 확인 필요');return;}
