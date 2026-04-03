@@ -352,7 +352,7 @@ const WN=new Set(['151814713','1285594683']);
 const CL=new Set(['1285594684','1287126542']);
 function stg(s){return WN.has(s)?'WN':CL.has(s)?'CL':CD.has(s)?'CD':SD.has(s)?'SD':'NL';}
 const ST={NL:{l:'New Leads',c:'#93C4F0'},SD:{l:'Scheduled',c:'#4A90D9'},CD:{l:'Completed',c:'#185FA5'},WN:{l:'Won',c:'#1D9E75'},CL:{l:'Lost',c:'#E24B4A'}};
-const OW={'87383427':'Khulief Bassel','87383418':'Ludwig Schultheiss','87383431':'Sagarika Parab','65907811':'Alessio Terziani','75624653':'Sergio Estival','719906327':'Elise Demange','719927206':'Ji Woong Kim','719927207':'Hyojung Cho','719927205':'hyungwoo joo','87231176':'이정은 Jeongeun','87865464':'MIMI KIM','1416440229':'Nowicki Marcin'};
+const OW={}; // HubSpot API에서 동적으로 로드됨
 const SKIP=new Set(['304544318','17459943','83583738','698771778','88097478','80932512','33535508','88767179']);
 const CORE_OW=['87383427','87383418','87383431','65907811','75624653','719906327','719927206','719927207','719927205','87231176','87865464','1416440229'];
 
@@ -698,11 +698,21 @@ async function _searchDeals(formValue,src){
 async function _fetchAndMerge(){
   try{
     _setStatus('static','HubSpot에서 데이터 불러오는 중...');
-    const [glowDeals,trade1Deals,trade2Deals]=await Promise.all([
+    // Owner 목록 + 딜 데이터 동시 조회
+    const [ownersRes,glowDeals,trade1Deals,trade2Deals]=await Promise.all([
+      fetch(PROXY+'?url='+encodeURIComponent('https://api.hubapi.com/crm/v3/owners?limit=100')),
       _searchDeals('2026 glow campaign','glow'),
       _searchDeals('medit trade-in 2026 quickstart promotion','trade1'),
       _searchDeals('Medit 2026 Q2 Trade-in','trade2')
     ]);
+    // OW 객체 동적 업데이트
+    if(ownersRes.ok){
+      const ownersData=await ownersRes.json();
+      (ownersData.results||[]).forEach(o=>{
+        const name=[o.firstName,o.lastName].filter(Boolean).join(' ');
+        if(name)OW[o.id]=name;
+      });
+    }
     const allApiDeals=[...glowDeals,...trade1Deals,...trade2Deals];
     if(!allApiDeals.length){_setStatus('err','딜 없음 — API 확인 필요');return;}
     // ALL 완전 교체
