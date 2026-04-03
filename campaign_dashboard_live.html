@@ -353,7 +353,7 @@ const CL=new Set(['1285594684','1287126542']);
 function stg(s){return WN.has(s)?'WN':CL.has(s)?'CL':CD.has(s)?'CD':SD.has(s)?'SD':'NL';}
 const ST={NL:{l:'New Leads',c:'#93C4F0'},SD:{l:'Scheduled',c:'#4A90D9'},CD:{l:'Completed',c:'#185FA5'},WN:{l:'Won',c:'#1D9E75'},CL:{l:'Lost',c:'#E24B4A'}};
 const OW={}; // HubSpot API에서 동적으로 로드됨
-const SKIP=new Set(['304544318','17459943','83583738','698771778','88097478','80932512','33535508','88767179']);
+const SKIP=new Set(['304544318','17459943','83583738','698771778','88097478','80932512','33535508','88767179','339528603']);
 const CORE_OW=['87383427','87383418','87383431','65907811','75624653','719906327','719927206','719927207','719927205','87231176','87865464','1416440229'];
 
 let gC=RAW.filter(r=>r[5]==='glow').length;
@@ -724,7 +724,7 @@ async function _fetchAndMerge(){
     // ALL 완전 교체
     ALL.length=0;
     const _owrCnt2={};
-    allApiDeals.forEach(r=>{
+    allApiDeals.filter(r=>r[3]!=='339528603').forEach(r=>{
       const region=r[1]||'(Unassigned)';
       ALL.push({d:r[0],r:region,c:r[2]||'—',o:r[3],sid:r[4],src:r[5]});
       if(region!=='(Unassigned)'&&r[3]){
